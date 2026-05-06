@@ -1,121 +1,132 @@
+"""Synthetic data generation for restaurant demand forecasting."""
+
+from typing import Dict, List, Optional
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
+from logger import logger
 
-RESTAURANTS = {
-    "R001": "Spice Garden",
-    "R002": "The Urban Bistro",
-    "R003": "Coastal Flavors",
-    "R004": "Royal Dine",
-    "R005": "Street Bites",
+# ── Constants ───────────────────────────────────────────────────────────────
+
+RESTAURANTS: Dict[str, str] = {
+    "R001": "The Golden Kebab",
+    "R002": "Urban Bistro",
+    "R003": "Pasta House",
+    "R004": "Sushi Zen",
 }
 
-CATEGORIES = ["Starters", "Mains", "Desserts", "Beverages"]
+CATEGORIES: List[str] = ["Main Course", "Starters", "Beverages", "Desserts"]
 
-MENU_ITEMS = {
-    "Starters":  ["Paneer Tikka", "Veg Spring Roll", "Soup of Day", "Garlic Bread"],
-    "Mains":     ["Butter Chicken", "Dal Makhani", "Biryani", "Pasta Arrabbiata"],
-    "Desserts":  ["Gulab Jamun", "Ice Cream", "Brownie", "Rasgulla"],
-    "Beverages": ["Lassi", "Cold Coffee", "Fresh Lime Soda", "Masala Chai"],
+PRICE_MAP: Dict[str, int] = {
+    "Main Course": 450,
+    "Starters": 250,
+    "Beverages": 150,
+    "Desserts": 200,
 }
 
-PRICE_MAP = {"Starters": 180, "Mains": 320, "Desserts": 120, "Beverages": 80}
+# ── Generator ───────────────────────────────────────────────────────────────
 
-INDIAN_FESTIVALS = {
-    "2023-01-26","2023-03-08","2023-04-14","2023-08-15",
-    "2023-10-24","2023-11-12","2023-12-25",
-    "2024-01-26","2024-03-25","2024-04-14","2024-08-15",
-    "2024-10-12","2024-11-01","2024-12-25",
-    "2025-01-26","2025-03-14","2025-08-15","2025-10-02",
-    "2025-10-20","2025-11-20","2025-12-25",
-}
-
-
-def generate_dataset(start="2023-01-01", end="2025-12-31", seed=42):
-    np.random.seed(seed)
-    dates = pd.date_range(start, end, freq="D")
-    records = []
-
-    for rid, rname in RESTAURANTS.items():
-        base_demand = np.random.randint(80, 160)
-        for dt in dates:
-            is_weekend  = int(dt.dayofweek >= 5)
-            is_festival = int(str(dt.date()) in INDIAN_FESTIVALS)
-            month = dt.month
-
-            season_factor = 1.0
-            if month in [10, 11, 12]: season_factor = 1.25
-            elif month in [6, 7, 8]:  season_factor = 0.80
-            elif month in [1, 2]:     season_factor = 0.90
-
-            temp     = np.random.normal(28 - 8 * np.sin((month - 1) * np.pi / 6), 3)
-            rainfall = max(0, np.random.normal(5 if month in [6, 7, 8, 9] else 0.5, 3))
-
-            weather_factor = 1.0 - 0.003 * max(0, rainfall - 2)
-            if temp > 38: weather_factor *= 0.92
-            if temp < 15: weather_factor *= 1.08
-
-            for cat in CATEGORIES:
-                cat_mult = {"Starters": 0.8, "Mains": 1.2, "Desserts": 0.6, "Beverages": 0.9}[cat]
-                demand = int(
-                    base_demand * cat_mult * season_factor * weather_factor
-                    * (1.3 if is_weekend else 1.0)
-                    * (1.5 if is_festival else 1.0)
-                    * np.random.uniform(0.85, 1.15)
-                )
-                demand = max(5, demand)
-                revenue  = demand * PRICE_MAP[cat] * np.random.uniform(0.92, 1.08)
-                waste_kg = demand * np.random.uniform(0.03, 0.12) * np.random.uniform(0.1, 0.3)
-                stock    = int(demand * np.random.uniform(1.0, 1.4))
-
-                records.append({
-                    "date":            dt,
-                    "restaurant_id":   rid,
-                    "restaurant_name": rname,
-                    "category":        cat,
-                    "quantity_sold":   demand,
-                    "revenue":         round(revenue, 2),
-                    "temperature":     round(temp, 1),
-                    "rainfall_mm":     round(rainfall, 1),
-                    "is_weekend":      is_weekend,
-                    "is_festival":     is_festival,
-                    "season_factor":   round(season_factor, 2),
-                    "waste_kg":        round(waste_kg, 2),
-                    "stock_level":     stock,
-                    "month":           month,
-                    "day_of_week":     dt.dayofweek,
-                    "day_of_year":     dt.dayofyear,
+def generate_dataset(days: int = 730) -> pd.DataFrame:
+    """Generates a multi-restaurant demand dataset.
+    
+    Args:
+        days: Number of days of historical data to generate.
+        
+    Returns:
+        A pandas DataFrame with generated data.
+    """
+    logger.info(f"Generating synthetic dataset for {days} days...")
+    np.random.seed(42)
+    start_date = datetime.now() - timedelta(days=days)
+    dates = [start_date + timedelta(days=i) for i in range(days)]
+    
+    rows = []
+    for rest_id, rest_name in RESTAURANTS.items():
+        for category in CATEGORIES:
+            base_demand = np.random.randint(20, 60)
+            price = PRICE_MAP[category]
+            
+            for date in dates:
+                # Seasonality & factors
+                is_weekend = 1 if date.weekday() >= 5 else 0
+                is_festival = 1 if np.random.random() < 0.03 else 0
+                temp = 25 + 10 * np.sin(2 * np.pi * date.timetuple().tm_yday / 365) + np.random.normal(0, 2)
+                rain = np.random.exponential(2) if np.random.random() < 0.2 else 0
+                
+                # Demand calculation
+                demand = base_demand
+                demand += 15 * is_weekend
+                demand += 30 * is_festival
+                demand -= 0.5 * (temp - 25)**2 if temp > 30 else 0
+                demand -= 5 * rain if rain > 5 else 0
+                demand += np.random.normal(0, 5)
+                demand = max(5, int(demand))
+                
+                # Secondary metrics
+                waste = demand * np.random.uniform(0.02, 0.12)
+                stock = demand * np.random.uniform(1.1, 1.5)
+                
+                rows.append({
+                    "date": date,
+                    "restaurant_id": rest_id,
+                    "restaurant_name": rest_name,
+                    "category": category,
+                    "quantity_sold": demand,
+                    "revenue": demand * price,
+                    "waste_kg": round(waste, 2),
+                    "stock_level": int(stock),
+                    "temperature": round(temp, 1),
+                    "rainfall_mm": round(rain, 1),
+                    "is_weekend": is_weekend,
+                    "is_festival": is_festival,
                 })
+                
+    return pd.DataFrame(rows)
 
-    df = pd.DataFrame(records)
-    df["date"] = pd.to_datetime(df["date"])
-    return df
+def get_time_series(df: pd.DataFrame, rest_id: str, category: str) -> pd.DataFrame:
+    """Extracts a specific time series from the full dataset.
+    
+    Args:
+        df: The full dataset.
+        rest_id: ID of the restaurant.
+        category: Menu category.
+        
+    Returns:
+        Filtered DataFrame sorted by date.
+    """
+    ts = df[(df["restaurant_id"] == rest_id) & (df["category"] == category)].copy()
+    return ts.sort_values("date")
 
-
-def get_time_series(df, restaurant_id, category):
-    sub = (df[(df["restaurant_id"] == restaurant_id) & (df["category"] == category)]
-           .copy().sort_values("date").reset_index(drop=True))
-    return sub
-
-
-def generate_inventory_snapshot(df, restaurant_id, as_of=None):
-    if as_of is None:
-        as_of = df["date"].max()
-    recent = df[
-        (df["restaurant_id"] == restaurant_id) &
-        (df["date"] >= as_of - timedelta(days=7)) &
-        (df["date"] <= as_of)
-    ]
-    snap = recent.groupby("category").agg(
-        avg_daily_demand=("quantity_sold", "mean"),
-        current_stock=("stock_level", "last"),
-        avg_waste_kg=("waste_kg", "mean"),
-    ).reset_index()
-    snap["days_of_stock"] = snap["current_stock"] / snap["avg_daily_demand"].clip(lower=1)
-    snap["risk"] = snap["days_of_stock"].apply(
-        lambda x: "🔴 Critical" if x < 1.5 else ("🟡 Low" if x < 3 else "🟢 Healthy")
-    )
-    snap["reorder_qty"] = (
-        (snap["avg_daily_demand"] * 7 - snap["current_stock"]).clip(lower=0).astype(int)
-    )
-    return snap
+def generate_inventory_snapshot(df: pd.DataFrame, rest_id: str) -> pd.DataFrame:
+    """Generates a current inventory status snapshot.
+    
+    Args:
+        df: The full dataset.
+        rest_id: ID of the restaurant.
+        
+    Returns:
+        Snapshot DataFrame with risk levels and reorder suggestions.
+    """
+    rest_df = df[df["restaurant_id"] == rest_id]
+    today = rest_df["date"].max()
+    
+    latest = rest_df[rest_df["date"] == today].copy()
+    avg_demand = rest_df.groupby("category")["quantity_sold"].mean().to_dict()
+    avg_waste = rest_df.groupby("category")["waste_kg"].mean().to_dict()
+    
+    latest["avg_daily_demand"] = latest["category"].map(avg_demand)
+    latest["avg_waste_kg"] = latest["category"].map(avg_waste)
+    latest["current_stock"] = latest["stock_level"]
+    latest["days_of_stock"] = latest["current_stock"] / latest["avg_daily_demand"]
+    
+    def get_risk(days):
+        if days < 1.1: return "🔴 Critical (Low Stock)"
+        if days < 1.3: return "🟡 Caution (Reorder Soon)"
+        return "🟢 Healthy (Sufficient)"
+        
+    latest["risk"] = latest["days_of_stock"].apply(get_risk)
+    
+    # Suggested reorder: amount to reach 2.5 days of coverage
+    latest["reorder_qty"] = (latest["avg_daily_demand"] * 2.5 - latest["current_stock"]).clip(lower=0).round().astype(int)
+    
+    return latest[["category", "current_stock", "avg_daily_demand", "days_of_stock", "risk", "reorder_qty", "avg_waste_kg"]]
