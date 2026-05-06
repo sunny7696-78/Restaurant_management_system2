@@ -1,7 +1,10 @@
+import streamlit as st
 import requests
 from typing import List, Dict, Any
 
-API_KEY = "692b9b2233e80724d08b39c038aea87a"
+# Get API Key from Streamlit secrets (for deployment)
+# Fallback to an empty string if not found
+API_KEY = st.secrets.get("OPENWEATHER_API_KEY", "")
 CITY = "ludhiana"
 
 def get_weather():
