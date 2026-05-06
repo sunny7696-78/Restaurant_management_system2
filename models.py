@@ -338,6 +338,7 @@ def ensemble_forecast(
     results = {}
     all_preds = []
 
+    if PROPHET_AVAILABLE:
         fc_p, met_p = prophet_forecast(ts, horizon)
         results["Prophet"] = (fc_p, met_p)
         all_preds.append(fc_p["predicted"].values)
