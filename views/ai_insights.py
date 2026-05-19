@@ -15,12 +15,27 @@ ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 CLAUDE_MODEL = "claude-sonnet-4-20250514"
 
 
+def get_api_key() -> str:
+    """Retrieve Anthropic API key from Streamlit secrets."""
+    try:
+        return st.secrets["ANTHROPIC_API_KEY"]
+    except Exception:
+        return ""
+
+
 def call_claude(prompt: str, max_tokens: int = 800) -> str:
     """Call Claude API and return text response."""
+    api_key = get_api_key()
+    if not api_key or api_key == "your-anthropic-api-key-here":
+        return "⚠️ Anthropic API key not configured. Please add ANTHROPIC_API_KEY in Streamlit Cloud → App Settings → Secrets."
     try:
         resp = requests.post(
             ANTHROPIC_API_URL,
-            headers={"Content-Type": "application/json"},
+            headers={
+                "Content-Type": "application/json",
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+            },
             json={
                 "model": CLAUDE_MODEL,
                 "max_tokens": max_tokens,
@@ -39,10 +54,17 @@ def call_claude(prompt: str, max_tokens: int = 800) -> str:
 
 def call_claude_json(prompt: str) -> dict:
     """Call Claude API and parse JSON response."""
+    api_key = get_api_key()
+    if not api_key or api_key == "your-anthropic-api-key-here":
+        return {}
     try:
         resp = requests.post(
             ANTHROPIC_API_URL,
-            headers={"Content-Type": "application/json"},
+            headers={
+                "Content-Type": "application/json",
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+            },
             json={
                 "model": CLAUDE_MODEL,
                 "max_tokens": 1000,
