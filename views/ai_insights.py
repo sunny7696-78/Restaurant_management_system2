@@ -1,4 +1,4 @@
-"""AI Insights view — Claude-powered prediction analysis for IntelliPredict."""
+"""AI Insights view — Gemini-powered prediction analysis for IntelliPredict."""
 
 import streamlit as st
 import pandas as pd
@@ -11,73 +11,50 @@ from data_generator import CATEGORIES, PRICE_MAP
 from utils import format_inr
 
 
-ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
-CLAUDE_MODEL = "claude-sonnet-4-20250514"
+GEMINI_MODEL = "gemini-1.5-flash"
+GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 
 def get_api_key() -> str:
-    """Retrieve Anthropic API key from Streamlit secrets."""
+    """Retrieve Gemini API key from Streamlit secrets."""
     try:
-        return st.secrets["ANTHROPIC_API_KEY"]
+        return st.secrets["GEMINI_API_KEY"]
     except Exception:
         return ""
 
 
-def call_claude(prompt: str, max_tokens: int = 800) -> str:
-    """Call Claude API and return text response."""
+def call_gemini(prompt: str) -> str:
+    """Call Gemini API and return text response."""
     api_key = get_api_key()
-    if not api_key or api_key == "your-anthropic-api-key-here":
-        return "⚠️ Anthropic API key not configured. Please add ANTHROPIC_API_KEY in Streamlit Cloud → App Settings → Secrets."
+    if not api_key or api_key == "your-gemini-api-key-here":
+        return "⚠️ Gemini API key not configured. Please add GEMINI_API_KEY in Streamlit Cloud → App Settings → Secrets."
     try:
         resp = requests.post(
-            ANTHROPIC_API_URL,
-            headers={
-                "Content-Type": "application/json",
-                "x-api-key": api_key,
-                "anthropic-version": "2023-06-01",
-            },
-            json={
-                "model": CLAUDE_MODEL,
-                "max_tokens": max_tokens,
-                "messages": [{"role": "user", "content": prompt}],
-            },
+            f"{GEMINI_API_URL}?key={api_key}",
+            headers={"Content-Type": "application/json"},
+            json={"contents": [{"parts": [{"text": prompt}]}]},
             timeout=30,
         )
         data = resp.json()
-        for block in data.get("content", []):
-            if block.get("type") == "text":
-                return block["text"]
-        return "No response from Claude."
+        return data["candidates"][0]["content"]["parts"][0]["text"]
     except Exception as e:
         return f"AI temporarily unavailable: {str(e)}"
 
 
-def call_claude_json(prompt: str) -> dict:
-    """Call Claude API and parse JSON response."""
+def call_gemini_json(prompt: str) -> dict:
+    """Call Gemini API and parse JSON response."""
     api_key = get_api_key()
-    if not api_key or api_key == "your-anthropic-api-key-here":
+    if not api_key or api_key == "your-gemini-api-key-here":
         return {}
     try:
         resp = requests.post(
-            ANTHROPIC_API_URL,
-            headers={
-                "Content-Type": "application/json",
-                "x-api-key": api_key,
-                "anthropic-version": "2023-06-01",
-            },
-            json={
-                "model": CLAUDE_MODEL,
-                "max_tokens": 1000,
-                "messages": [{"role": "user", "content": prompt}],
-            },
+            f"{GEMINI_API_URL}?key={api_key}",
+            headers={"Content-Type": "application/json"},
+            json={"contents": [{"parts": [{"text": prompt}]}]},
             timeout=30,
         )
         data = resp.json()
-        raw = ""
-        for block in data.get("content", []):
-            if block.get("type") == "text":
-                raw = block["text"]
-                break
+        raw = data["candidates"][0]["content"]["parts"][0]["text"]
         clean = raw.replace("```json", "").replace("```", "").strip()
         return json.loads(clean)
     except Exception:
@@ -85,11 +62,11 @@ def call_claude_json(prompt: str) -> dict:
 
 
 def render_ai_insights(df: pd.DataFrame, rest_id: str, rest_name: str):
-    """Renders the AI Insights page with Claude-powered predictions."""
+    """Renders the AI Insights page with Gemini-powered predictions."""
 
     st.markdown("# 🤖 AI Prediction & Insights")
     st.markdown(
-        f"<small style='color:#8A8696'>Claude-powered demand analysis for <b>{rest_name}</b></small>",
+        f"<small style='color:#8A8696'>Gemini-powered demand analysis for <b>{rest_name}</b></small>",
         unsafe_allow_html=True,
     )
     st.divider()
@@ -113,10 +90,10 @@ def render_ai_insights(df: pd.DataFrame, rest_id: str, rest_name: str):
     # ── Quick KPIs ────────────────────────────────────────────────────────────
     c1, c2, c3, c4 = st.columns(4)
     for col, label, val, color in [
-        (c1, "Avg Daily Demand", f"{avg_qty:.0f} units", PALETTE["primary"]),
-        (c2, "Avg Daily Waste",  f"{avg_waste:.1f} kg",  PALETTE["danger"]),
-        (c3, "Avg Daily Revenue",format_inr(avg_rev),    PALETTE["secondary"]),
-        (c4, "Peak Demand Day",  str(peak_day)[:10],     PALETTE["accent"]),
+        (c1, "Avg Daily Demand",  f"{avg_qty:.0f} units", PALETTE["primary"]),
+        (c2, "Avg Daily Waste",   f"{avg_waste:.1f} kg",  PALETTE["danger"]),
+        (c3, "Avg Daily Revenue", format_inr(avg_rev),    PALETTE["secondary"]),
+        (c4, "Peak Demand Day",   str(peak_day)[:10],     PALETTE["accent"]),
     ]:
         col.markdown(f"""
         <div class='kpi-card'>
@@ -126,35 +103,35 @@ def render_ai_insights(df: pd.DataFrame, rest_id: str, rest_name: str):
 
     st.divider()
 
-    # ── Full AI Prediction Button ─────────────────────────────────────────────
+    # ── Full AI Prediction ────────────────────────────────────────────────────
     st.markdown("<div class='section-header'>⚡ Full AI Prediction Analysis</div>", unsafe_allow_html=True)
     st.markdown(
-        "<small style='color:#8A8696'>Claude analyses your restaurant's historical data and returns structured predictions.</small>",
+        "<small style='color:#8A8696'>Gemini analyses your restaurant data and returns structured predictions.</small>",
         unsafe_allow_html=True,
     )
 
-    run_pred = st.button("🤖 Run AI Prediction (Claude)", use_container_width=True)
+    run_pred = st.button("🤖 Run AI Prediction (Gemini)", use_container_width=True)
 
     if run_pred:
-        prompt = f"""You are an expert restaurant analytics AI. Analyze this restaurant data and return ONLY valid JSON (no markdown, no preamble):
+        prompt = f"""You are an expert restaurant analytics AI. Analyze this data and return ONLY valid JSON (no markdown, no preamble, no explanation):
 
 Restaurant: {rest_name}
 Avg daily demand (30d): {avg_qty:.0f} units
 Avg daily waste: {avg_waste:.1f} kg
-Avg daily revenue: ₹{avg_rev:.0f}
-Last 7-day revenue: ₹{last7_rev:.0f}
-Previous 7-day revenue: ₹{prev7_rev:.0f}
+Avg daily revenue: Rs {avg_rev:.0f}
+Last 7-day revenue: Rs {last7_rev:.0f}
+Previous 7-day revenue: Rs {prev7_rev:.0f}
 Peak demand day: {peak_day}
 Categories: {', '.join(CATEGORIES)}
 
-Return this exact JSON structure:
+Return ONLY this exact JSON structure with no extra text:
 {{
   "demand_next_7d": <integer>,
   "demand_next_30d": <integer>,
-  "waste_reduction_potential": "<percentage string>",
-  "revenue_growth_opportunity": "<percentage string>",
-  "top_risk": "<one sentence max>",
-  "top_opportunity": "<one sentence max>",
+  "waste_reduction_potential": "<percentage string like 12-15%>",
+  "revenue_growth_opportunity": "<percentage string like 8-11%>",
+  "top_risk": "<one sentence>",
+  "top_opportunity": "<one sentence>",
   "recommended_stock_adjustment": "<e.g. +10% Main Course, -5% Desserts>",
   "predicted_busy_days": ["<day1>", "<day2>"],
   "category_insights": {{
@@ -166,20 +143,19 @@ Return this exact JSON structure:
   "summary": "<2 sentence executive summary>"
 }}"""
 
-        with st.spinner("🧠 Claude is analysing demand patterns, waste factors & revenue opportunities…"):
-            result = call_claude_json(prompt)
+        with st.spinner("🧠 Gemini is analysing demand patterns, waste factors & revenue opportunities…"):
+            result = call_gemini_json(prompt)
 
         if result:
             st.success("✅ AI Prediction complete!")
             st.divider()
 
-            # Prediction KPIs
             p1, p2, p3, p4 = st.columns(4)
             for col, label, val, color in [
-                (p1, "Predicted Demand (7d)",   f"{result.get('demand_next_7d', '–'):,}" if isinstance(result.get('demand_next_7d'), int) else "–", PALETTE["primary"]),
-                (p2, "Predicted Demand (30d)",  f"{result.get('demand_next_30d', '–'):,}" if isinstance(result.get('demand_next_30d'), int) else "–", PALETTE["secondary"]),
+                (p1, "Predicted Demand (7d)",    f"{result.get('demand_next_7d', '–'):,}" if isinstance(result.get('demand_next_7d'), int) else "–", PALETTE["primary"]),
+                (p2, "Predicted Demand (30d)",   f"{result.get('demand_next_30d', '–'):,}" if isinstance(result.get('demand_next_30d'), int) else "–", PALETTE["secondary"]),
                 (p3, "Waste Reduction Potential", result.get("waste_reduction_potential", "–"), PALETTE["success"]),
-                (p4, "Revenue Growth Opp.",      result.get("revenue_growth_opportunity", "–"), PALETTE["accent"]),
+                (p4, "Revenue Growth Opp.",       result.get("revenue_growth_opportunity", "–"), PALETTE["accent"]),
             ]:
                 col.markdown(f"""
                 <div class='kpi-card' style='border-color:{color}44'>
@@ -189,7 +165,6 @@ Return this exact JSON structure:
 
             st.divider()
 
-            # Risk & Opportunity
             r_col, o_col = st.columns(2)
             with r_col:
                 st.markdown(f"""
@@ -210,7 +185,6 @@ Return this exact JSON structure:
 
             st.divider()
 
-            # Stock + Busy days
             s_col, b_col = st.columns(2)
             with s_col:
                 st.markdown("<div class='section-header'>📦 Stock Adjustment</div>", unsafe_allow_html=True)
@@ -230,7 +204,6 @@ Return this exact JSON structure:
                 )
                 st.markdown(f"<div style='margin-top:8px'>{badges}</div>", unsafe_allow_html=True)
 
-            # Category insights
             st.divider()
             st.markdown("<div class='section-header'>🍽️ Category Insights</div>", unsafe_allow_html=True)
             cat_insights = result.get("category_insights", {})
@@ -244,18 +217,17 @@ Return this exact JSON structure:
                     <div style='font-size:12px;color:{PALETTE["text"]};margin-top:6px;line-height:1.6'>{insight}</div>
                 </div>""", unsafe_allow_html=True)
 
-            # Summary
             if result.get("summary"):
                 st.divider()
                 st.markdown("<div class='section-header'>📋 Executive Summary</div>", unsafe_allow_html=True)
                 st.info(result["summary"])
         else:
-            st.error("Could not parse AI response. Please try again.")
+            st.error("Could not parse AI response. Please check your GEMINI_API_KEY in Secrets and try again.")
 
     st.divider()
 
-    # ── Conversational AI Chatbot ─────────────────────────────────────────────
-    st.markdown("<div class='section-header'>💬 Ask Claude About Your Restaurant</div>", unsafe_allow_html=True)
+    # ── Conversational Chatbot ────────────────────────────────────────────────
+    st.markdown("<div class='section-header'>💬 Ask Gemini About Your Restaurant</div>", unsafe_allow_html=True)
     st.markdown(
         "<small style='color:#8A8696'>Ask any question about demand, inventory, pricing, or strategy.</small>",
         unsafe_allow_html=True,
@@ -264,17 +236,15 @@ Return this exact JSON structure:
     if "ai_chat_history" not in st.session_state:
         st.session_state["ai_chat_history"] = []
 
-    # Display chat history
     for msg in st.session_state["ai_chat_history"]:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    # Suggested questions
     suggestions = [
         "What should I stock more of this weekend?",
         "How can I reduce waste by 20%?",
-        "What's the best price for Main Course?",
-        "Predict demand for next Diwali weekend.",
+        "Best price for Main Course?",
+        "Predict demand for next festival weekend.",
         "Which category has highest revenue potential?",
     ]
     st.markdown("<small style='color:#8A8696'>Suggested:</small>", unsafe_allow_html=True)
@@ -284,8 +254,7 @@ Return this exact JSON structure:
             st.session_state["pending_query"] = sug
             st.rerun()
 
-    # Chat input
-    user_input = st.chat_input("Ask Claude anything about your restaurant…")
+    user_input = st.chat_input("Ask Gemini anything about your restaurant…")
     if "pending_query" in st.session_state:
         user_input = st.session_state.pop("pending_query")
 
@@ -293,8 +262,8 @@ Return this exact JSON structure:
         context = f"""Restaurant: {rest_name}
 Avg daily demand: {avg_qty:.0f} units
 Avg daily waste: {avg_waste:.1f} kg
-Avg daily revenue: ₹{avg_rev:.0f}
-Last 7-day revenue: ₹{last7_rev:.0f}
+Avg daily revenue: Rs {avg_rev:.0f}
+Last 7-day revenue: Rs {last7_rev:.0f}
 Categories: {', '.join(CATEGORIES)}"""
 
         st.session_state["ai_chat_history"].append({"role": "user", "content": user_input})
@@ -302,15 +271,15 @@ Categories: {', '.join(CATEGORIES)}"""
             st.markdown(user_input)
 
         with st.chat_message("assistant"):
-            with st.spinner("Claude is thinking…"):
+            with st.spinner("Gemini is thinking…"):
                 full_prompt = f"""You are an expert restaurant analytics assistant for {rest_name}.
-Context data:
+Context:
 {context}
 
-User question: {user_input}
+Question: {user_input}
 
-Respond concisely (3-4 sentences max) with actionable, data-driven insights. Use ₹ for currency."""
-                response = call_claude(full_prompt, max_tokens=400)
+Respond in 3-4 sentences max with actionable, data-driven insights. Use Rs for currency."""
+                response = call_gemini(full_prompt)
             st.markdown(response)
             st.session_state["ai_chat_history"].append({"role": "assistant", "content": response})
 
@@ -321,7 +290,7 @@ Respond concisely (3-4 sentences max) with actionable, data-driven insights. Use
 
     st.divider()
 
-    # ── Static Rule-Based Insights (always visible) ───────────────────────────
+    # ── Auto-Generated Insights ───────────────────────────────────────────────
     st.markdown("<div class='section-header'>📊 Auto-Generated Insights</div>", unsafe_allow_html=True)
 
     recent7  = daily.tail(7)

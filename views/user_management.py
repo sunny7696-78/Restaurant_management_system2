@@ -150,13 +150,13 @@ def render_user_management():
         color, _ = role_colors[role]
         header[i + 1].markdown(f"<small style='color:{color};font-weight:700;text-transform:uppercase'>{role}</small>", unsafe_allow_html=True)
 
+    success_color = PALETTE["success"]
+    danger_color = PALETTE["danger"]
+    text_color = PALETTE["text"]
     for page in all_pages:
         row = st.columns([2, 1, 1, 1])
-        row[0].markdown(f"<small style='color:{PALETTE['text']}'>{page_labels[page]}</small>", unsafe_allow_html=True)
+        row[0].markdown(f"<small style='color:{text_color}'>{page_labels[page]}</small>", unsafe_allow_html=True)
         for i, role in enumerate(["admin", "manager", "staff"]):
             has = page in ROLE_PERMISSIONS.get(role, [])
-            row[i + 1].markdown(
-                f"<span style='color:{PALETTE[\"success\"]}'>✅</span>" if has else
-                f"<span style='color:{PALETTE[\"danger\"]}'>✗</span>",
-                unsafe_allow_html=True,
-            )
+            icon_html = f"<span style='color:{success_color}'>✅</span>" if has else f"<span style='color:{danger_color}'>✗</span>"
+            row[i + 1].markdown(icon_html, unsafe_allow_html=True)
