@@ -11,7 +11,7 @@ from data_generator import CATEGORIES, PRICE_MAP
 from utils import format_inr
 
 
-GEMINI_MODEL = "gemini-1.5-flash"
+GEMINI_MODEL = "gemini-2.0-flash"
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 
