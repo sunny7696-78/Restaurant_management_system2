@@ -41,24 +41,54 @@ def call_gemini(prompt: str) -> str:
         return f"AI temporarily unavailable: {str(e)}"
 
 
-def call_gemini_json(prompt: str) -> dict:
-    """Call Gemini API and parse JSON response."""
+def call_gemini_json(prompt: str) -> tuple:
+    """Call Gemini API and parse JSON response.
+    Returns (result_dict, error_message). On success error_message is None.
+    """
     api_key = get_api_key()
     if not api_key or api_key == "your-gemini-api-key-here":
-        return {}
+        return {}, "GEMINI_API_KEY not set in Streamlit Secrets."
     try:
         resp = requests.post(
             f"{GEMINI_API_URL}?key={api_key}",
             headers={"Content-Type": "application/json"},
-            json={"contents": [{"parts": [{"text": prompt}]}]},
-            timeout=30,
+            json={
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {
+                    "temperature": 0.2,
+                    "responseMimeType": "application/json",
+                },
+            },
+            timeout=45,
         )
+        if resp.status_code != 200:
+            return {}, f"Gemini API error {resp.status_code}: {resp.text[:300]}"
+
         data = resp.json()
+
+        # Check for blocked response
+        if not data.get("candidates"):
+            reason = data.get("promptFeedback", {}).get("blockReason", "Unknown")
+            return {}, f"Response blocked by Gemini safety filter: {reason}"
+
         raw = data["candidates"][0]["content"]["parts"][0]["text"]
-        clean = raw.replace("```json", "").replace("```", "").strip()
-        return json.loads(clean)
-    except Exception:
-        return {}
+
+        # Strip markdown fences robustly
+        import re
+        clean = re.sub(r"```(?:json)?", "", raw).strip().strip("`").strip()
+
+        # Find the JSON object if there's extra text
+        match = re.search(r"\{.*\}", clean, re.DOTALL)
+        if match:
+            clean = match.group(0)
+
+        parsed = json.loads(clean)
+        return parsed, None
+
+    except json.JSONDecodeError as e:
+        return {}, f"JSON parse error: {e}. Raw response: {raw[:400] if 'raw' in dir() else 'no response'}"
+    except Exception as e:
+        return {}, f"Unexpected error: {str(e)}"
 
 
 def render_ai_insights(df: pd.DataFrame, rest_id: str, rest_name: str):
@@ -144,9 +174,11 @@ Return ONLY this exact JSON structure with no extra text:
 }}"""
 
         with st.spinner("🧠 Gemini is analysing demand patterns, waste factors & revenue opportunities…"):
-            result = call_gemini_json(prompt)
+            result, err = call_gemini_json(prompt)
 
-        if result:
+        if err:
+            st.error(f"❌ {err}")
+        elif result:
             st.success("✅ AI Prediction complete!")
             st.divider()
 
@@ -198,8 +230,9 @@ Return ONLY this exact JSON structure with no extra text:
             with b_col:
                 st.markdown("<div class='section-header'>📅 Predicted Busy Days</div>", unsafe_allow_html=True)
                 busy = result.get("predicted_busy_days", [])
+                pp = PALETTE["primary"]
                 badges = "".join(
-                    f"<span style='background:{PALETTE['primary']}22;color:{PALETTE['primary']};border:1px solid {PALETTE['primary']}44;border-radius:6px;padding:4px 14px;margin:4px;display:inline-block;font-weight:600'>{d}</span>"
+                    f"<span style='background:{pp}22;color:{pp};border:1px solid {pp}44;border-radius:6px;padding:4px 14px;margin:4px;display:inline-block;font-weight:600'>{d}</span>"
                     for d in busy
                 )
                 st.markdown(f"<div style='margin-top:8px'>{badges}</div>", unsafe_allow_html=True)
@@ -222,7 +255,7 @@ Return ONLY this exact JSON structure with no extra text:
                 st.markdown("<div class='section-header'>📋 Executive Summary</div>", unsafe_allow_html=True)
                 st.info(result["summary"])
         else:
-            st.error("Could not parse AI response. Please check your GEMINI_API_KEY in Secrets and try again.")
+            st.warning("⚠️ Gemini returned an empty response. Please try again.")
 
     st.divider()
 
