@@ -12,6 +12,11 @@ from utils import format_inr
 from data_generator import RESTAURANTS, CATEGORIES
 
 P  = PALETTE
+_danger = P["danger"]
+_muted = P["muted"]
+_secondary = P["secondary"]
+_success = P["success"]
+_text = P["text"]
 PC = {k: v for k, v in P.items()}
 
 
@@ -139,7 +144,7 @@ def send_email_alert(to_email: str, subject: str, body: str,
 
 def render_alerts(df: pd.DataFrame, rest_id: str, rest_name: str):
     st.markdown("# 📱 Smart Alerts Center")
-    st.markdown(f"<small style='color:{P['muted']}'>Auto-detect anomalies and send WhatsApp/Email alerts for <b>{rest_name}</b></small>", unsafe_allow_html=True)
+    st.markdown(f"<small style='color:{_muted}'>Auto-detect anomalies and send WhatsApp/Email alerts for <b>{rest_name}</b></small>", unsafe_allow_html=True)
     st.divider()
 
     # ── Live alert detection ──────────────────────────────────────────────────
@@ -153,9 +158,9 @@ def render_alerts(df: pd.DataFrame, rest_id: str, rest_name: str):
         st.warning(f"⚠️ {len(alerts)} alert(s) detected for {rest_name}")
 
     type_colors = {
-        "critical": P["danger"],
-        "warning":  P["secondary"],
-        "positive": P["success"],
+        "critical": _danger,
+        "warning":  _secondary,
+        "positive": _success,
         "info":     "#6baaff",
     }
     type_bg = {
@@ -167,7 +172,7 @@ def render_alerts(df: pd.DataFrame, rest_id: str, rest_name: str):
 
     selected_alerts = []
     for i, alert in enumerate(alerts):
-        color = type_colors.get(alert["type"], P["muted"])
+        color = type_colors.get(alert["type"], _muted)
         bg    = type_bg.get(alert["type"], "#1A1A24")
         col_a, col_b = st.columns([0.05, 0.95])
         checked = col_a.checkbox("", key=f"alert_chk_{i}", value=True)
@@ -176,11 +181,11 @@ def render_alerts(df: pd.DataFrame, rest_id: str, rest_name: str):
             <div style='background:{bg};border:1px solid {color}44;border-left:4px solid {color};
                         border-radius:10px;padding:14px 16px;margin-bottom:6px'>
                 <div style='display:flex;justify-content:space-between;align-items:center'>
-                    <span style='font-size:16px;font-weight:700;color:{P["text"]}'>{alert["icon"]} {alert["title"]}</span>
+                    <span style='font-size:16px;font-weight:700;color:{_text}'>{alert["icon"]} {alert["title"]}</span>
                     <span style='background:{color}22;color:{color};border:1px solid {color}44;
                                  border-radius:5px;padding:2px 10px;font-size:11px;font-weight:700'>{alert["metric"]}</span>
                 </div>
-                <div style='font-size:13px;color:{P["muted"]};margin-top:6px;line-height:1.6'>{alert["body"]}</div>
+                <div style='font-size:13px;color:{_muted};margin-top:6px;line-height:1.6'>{alert["body"]}</div>
             </div>""", unsafe_allow_html=True)
         if checked:
             selected_alerts.append(alert)
@@ -242,7 +247,7 @@ def render_alerts(df: pd.DataFrame, rest_id: str, rest_name: str):
 
     with tab3:
         st.markdown("<div class='section-header'>⚙️ Alert Threshold Settings</div>", unsafe_allow_html=True)
-        st.markdown(f"<small style='color:{P['muted']}'>Customize when alerts fire</small>", unsafe_allow_html=True)
+        st.markdown(f"<small style='color:{_muted}'>Customize when alerts fire</small>", unsafe_allow_html=True)
 
         t1, t2 = st.columns(2)
         t1.slider("Stock Critical Below (coverage)",  0.8, 2.0, 1.1, 0.1, key="thresh_stock")

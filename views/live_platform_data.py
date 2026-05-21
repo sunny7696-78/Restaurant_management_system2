@@ -14,6 +14,12 @@ from utils import format_inr
 from data_generator import RESTAURANTS, CATEGORIES
 
 P = PALETTE
+_danger = P["danger"]
+_muted = P["muted"]
+_primary = P["primary"]
+_secondary = P["secondary"]
+_success = P["success"]
+_text = P["text"]
 
 # ── Simulated platform data (mirrors real API structure) ─────────────────────
 # Note: Zomato/Swiggy do not provide public APIs. This simulates the data
@@ -108,12 +114,12 @@ def fetch_google_places_rating(rest_name: str) -> dict:
 def render_live_platform_data(df: pd.DataFrame, rest_id: str, rest_name: str):
     st.markdown("# 📡 Live Platform Data")
     st.markdown(
-        f"<small style='color:{P['muted']}'>Real-time order feeds from Zomato, Swiggy & Dine-In for <b>{rest_name}</b></small>",
+        f"<small style='color:{_muted}'>Real-time order feeds from Zomato, Swiggy & Dine-In for <b>{rest_name}</b></small>",
         unsafe_allow_html=True,
     )
     st.markdown(f"""
-    <div style='background:#2a1f0f;border:1px solid {P["secondary"]}44;border-radius:8px;
-                padding:10px 16px;margin-bottom:16px;font-size:12px;color:{P["secondary"]}'>
+    <div style='background:#2a1f0f;border:1px solid {_secondary}44;border-radius:8px;
+                padding:10px 16px;margin-bottom:16px;font-size:12px;color:{_secondary}'>
         ⚠️ <b>Note:</b> Zomato & Swiggy don't offer public APIs. This uses a realistic simulation
         of Partner API data structures. To connect real data, register as a restaurant partner
         and use their Business Manager API credentials in Secrets.
@@ -147,7 +153,7 @@ def render_live_platform_data(df: pd.DataFrame, rest_id: str, rest_name: str):
     cols = st.columns(len(agg))
     for i, (_, row) in enumerate(agg.iterrows()):
         meta  = PLATFORM_BASE.get(row["platform"], {})
-        color = meta.get("color", P["primary"])
+        color = meta.get("color", _primary)
         icon  = meta.get("icon", "📦")
         cancel_rate = round(row["cancelled"] / max(row["total_orders"], 1) * 100, 1)
 
@@ -155,12 +161,12 @@ def render_live_platform_data(df: pd.DataFrame, rest_id: str, rest_name: str):
         <div class='kpi-card' style='text-align:left;border-color:{color}44'>
             <div style='font-size:20px;margin-bottom:6px'>{icon} <b style='color:{color}'>{row["platform"]}</b></div>
             <div style='font-size:22px;font-weight:700;color:{color}'>{int(row["total_orders"]):,}</div>
-            <div style='font-size:11px;color:{P["muted"]};margin-bottom:8px'>orders ({days_range}d)</div>
-            <div style='font-size:12px;color:{P["text"]}'>Net Rev: <b style='color:{P["success"]}'>{format_inr(row["net_revenue"])}</b></div>
-            <div style='font-size:12px;color:{P["text"]}'>Commission: <b style='color:{P["danger"]}'>{format_inr(row["total_commission"])}</b></div>
-            <div style='font-size:12px;color:{P["text"]}'>Avg Order: <b>₹{int(row["avg_aov"])}</b></div>
-            <div style='font-size:12px;color:{P["text"]}'>Rating: <b style='color:{P["secondary"]}'>⭐ {row["avg_rating"]:.1f}</b></div>
-            <div style='font-size:11px;color:{P["danger"]}'>Cancel rate: {cancel_rate}%</div>
+            <div style='font-size:11px;color:{_muted};margin-bottom:8px'>orders ({days_range}d)</div>
+            <div style='font-size:12px;color:{_text}'>Net Rev: <b style='color:{_success}'>{format_inr(row["net_revenue"])}</b></div>
+            <div style='font-size:12px;color:{_text}'>Commission: <b style='color:{_danger}'>{format_inr(row["total_commission"])}</b></div>
+            <div style='font-size:12px;color:{_text}'>Avg Order: <b>₹{int(row["avg_aov"])}</b></div>
+            <div style='font-size:12px;color:{_text}'>Rating: <b style='color:{_secondary}'>⭐ {row["avg_rating"]:.1f}</b></div>
+            <div style='font-size:11px;color:{_danger}'>Cancel rate: {cancel_rate}%</div>
         </div>""", unsafe_allow_html=True)
 
     st.divider()
@@ -185,7 +191,7 @@ def render_live_platform_data(df: pd.DataFrame, rest_id: str, rest_name: str):
         ))
     fig_trend.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color=P["text"]),
+        font=dict(color=_text),
         xaxis=dict(gridcolor="#2a2a38"),
         yaxis=dict(gridcolor="#2a2a38", title="Orders"),
         legend=dict(bgcolor="rgba(0,0,0,0)"),
@@ -203,11 +209,11 @@ def render_live_platform_data(df: pd.DataFrame, rest_id: str, rest_name: str):
             labels=agg["platform"],
             values=agg["net_revenue"],
             hole=0.5,
-            marker=dict(colors=[PLATFORM_BASE.get(p, {}).get("color", P["primary"]) for p in agg["platform"]]),
+            marker=dict(colors=[PLATFORM_BASE.get(p, {}).get("color", _primary) for p in agg["platform"]]),
         ))
         fig_pie.update_layout(
             paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color=P["text"]),
+            font=dict(color=_text),
             legend=dict(bgcolor="rgba(0,0,0,0)"),
             margin=dict(l=0, r=0, t=10, b=0), height=280,
         )
@@ -222,16 +228,16 @@ def render_live_platform_data(df: pd.DataFrame, rest_id: str, rest_name: str):
 
         st.markdown(f"""
         <div class='kpi-card' style='text-align:left;margin-bottom:10px'>
-            <div style='font-size:12px;color:{P["muted"]};margin-bottom:4px'>Total Gross Revenue</div>
-            <div style='font-size:20px;font-weight:700;color:{P["text"]}'>{format_inr(total_rev)}</div>
+            <div style='font-size:12px;color:{_muted};margin-bottom:4px'>Total Gross Revenue</div>
+            <div style='font-size:20px;font-weight:700;color:{_text}'>{format_inr(total_rev)}</div>
         </div>
-        <div class='kpi-card' style='text-align:left;margin-bottom:10px;border-color:{P["danger"]}44'>
-            <div style='font-size:12px;color:{P["muted"]};margin-bottom:4px'>Platform Commissions</div>
-            <div style='font-size:20px;font-weight:700;color:{P["danger"]}'>- {format_inr(total_comm)} ({comm_pct}%)</div>
+        <div class='kpi-card' style='text-align:left;margin-bottom:10px;border-color:{_danger}44'>
+            <div style='font-size:12px;color:{_muted};margin-bottom:4px'>Platform Commissions</div>
+            <div style='font-size:20px;font-weight:700;color:{_danger}'>- {format_inr(total_comm)} ({comm_pct}%)</div>
         </div>
-        <div class='kpi-card' style='text-align:left;border-color:{P["success"]}44'>
-            <div style='font-size:12px;color:{P["muted"]};margin-bottom:4px'>Net Revenue (After Commission)</div>
-            <div style='font-size:20px;font-weight:700;color:{P["success"]}'>{format_inr(total_net)}</div>
+        <div class='kpi-card' style='text-align:left;border-color:{_success}44'>
+            <div style='font-size:12px;color:{_muted};margin-bottom:4px'>Net Revenue (After Commission)</div>
+            <div style='font-size:20px;font-weight:700;color:{_success}'>{format_inr(total_net)}</div>
         </div>""", unsafe_allow_html=True)
 
     st.divider()
@@ -272,7 +278,7 @@ def render_live_platform_data(df: pd.DataFrame, rest_id: str, rest_name: str):
     ))
     fig_hm.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color=P["text"]),
+        font=dict(color=_text),
         xaxis=dict(gridcolor="#2a2a38"),
         yaxis=dict(gridcolor="#2a2a38"),
         margin=dict(l=0, r=0, t=10, b=0), height=260,

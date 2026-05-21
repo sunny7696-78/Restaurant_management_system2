@@ -10,6 +10,13 @@ from utils import format_inr
 from data_generator import RESTAURANTS, CATEGORIES
 
 P = PALETTE
+_accent = P["accent"]
+_danger = P["danger"]
+_muted = P["muted"]
+_primary = P["primary"]
+_secondary = P["secondary"]
+_success = P["success"]
+_text = P["text"]
 
 # Real Ludhiana-area coordinates for demo restaurants
 RESTAURANT_COORDS = {
@@ -22,7 +29,7 @@ RESTAURANT_COORDS = {
 
 def render_heatmap(df: pd.DataFrame, rest_id: str, rest_name: str):
     st.markdown("# 🗺️ Multi-Restaurant Demand Heatmap")
-    st.markdown(f"<small style='color:{P['muted']}'>Real-time demand intensity across all restaurant locations in Ludhiana</small>", unsafe_allow_html=True)
+    st.markdown(f"<small style='color:{_muted}'>Real-time demand intensity across all restaurant locations in Ludhiana</small>", unsafe_allow_html=True)
     st.divider()
 
     # ── Compute per-restaurant KPIs ───────────────────────────────────────────
@@ -105,8 +112,8 @@ def render_heatmap(df: pd.DataFrame, rest_id: str, rest_name: str):
             showscale=True,
             colorbar=dict(
                 title=metric,
-                tickfont=dict(color=P["text"]),
-                titlefont=dict(color=P["text"]),
+                tickfont=dict(color=_text),
+                titlefont=dict(color=_text),
                 bgcolor="rgba(26,26,36,0.8)",
                 bordercolor="#2a2a38",
             ),
@@ -131,10 +138,10 @@ def render_heatmap(df: pd.DataFrame, rest_id: str, rest_name: str):
         lat=map_df["lat"],
         lon=map_df["lon"],
         mode="markers+text",
-        marker=dict(size=12, color=P["primary"]),
+        marker=dict(size=12, color=_primary),
         text=map_df["name"].apply(lambda x: x.split()[0]),
         textposition="top right",
-        textfont=dict(size=11, color=P["text"]),
+        textfont=dict(size=11, color=_text),
         hoverinfo="skip",
         name="Restaurants",
     ))
@@ -146,13 +153,13 @@ def render_heatmap(df: pd.DataFrame, rest_id: str, rest_name: str):
             zoom=12.5,
         ),
         paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color=P["text"]),
+        font=dict(color=_text),
         margin=dict(l=0, r=0, t=0, b=0),
         height=480,
         legend=dict(
             bgcolor="rgba(26,26,36,0.8)",
             bordercolor="#2a2a38",
-            font=dict(color=P["text"]),
+            font=dict(color=_text),
         ),
     )
     st.plotly_chart(fig, use_container_width=True)
@@ -169,16 +176,16 @@ def render_heatmap(df: pd.DataFrame, rest_id: str, rest_name: str):
     for i, (_, row) in enumerate(rank.iterrows()):
         kpi = rest_kpis[row["restaurant_id"]]
         cols[i].markdown(f"""
-        <div class='kpi-card' style='text-align:left;border-color:{P["primary"]}44'>
+        <div class='kpi-card' style='text-align:left;border-color:{_primary}44'>
             <div style='font-size:22px;margin-bottom:6px'>{medal[i]}</div>
-            <div style='font-weight:700;font-size:13px;color:{P["text"]};margin-bottom:2px'>{row["name"]}</div>
-            <div style='font-size:11px;color:{P["muted"]};margin-bottom:10px'>{row["area"]}</div>
-            <div style='font-size:12px;color:{P["primary"]};font-weight:700'>{row["display"]}</div>
-            <div style='font-size:11px;color:{P["muted"]}'>{metric}</div>
+            <div style='font-weight:700;font-size:13px;color:{_text};margin-bottom:2px'>{row["name"]}</div>
+            <div style='font-size:11px;color:{_muted};margin-bottom:10px'>{row["area"]}</div>
+            <div style='font-size:12px;color:{_primary};font-weight:700'>{row["display"]}</div>
+            <div style='font-size:11px;color:{_muted}'>{metric}</div>
             <hr style='border:none;border-top:1px solid #2a2a3820;margin:8px 0'>
-            <div style='font-size:11px;color:{P["muted"]}'>Revenue: <b style='color:{P["secondary"]}'>{format_inr(kpi["rev"])}</b></div>
-            <div style='font-size:11px;color:{P["muted"]}'>Waste: <b style='color:{P["danger"]}'>{kpi["waste"]} kg</b></div>
-            <div style='font-size:11px;color:{P["muted"]}'>Stock: <b style='color:{P["success"]}'>{kpi["cov"]}x</b></div>
+            <div style='font-size:11px;color:{_muted}'>Revenue: <b style='color:{_secondary}'>{format_inr(kpi["rev"])}</b></div>
+            <div style='font-size:11px;color:{_muted}'>Waste: <b style='color:{_danger}'>{kpi["waste"]} kg</b></div>
+            <div style='font-size:11px;color:{_muted}'>Stock: <b style='color:{_success}'>{kpi["cov"]}x</b></div>
         </div>""", unsafe_allow_html=True)
 
     st.divider()
@@ -199,12 +206,12 @@ def render_heatmap(df: pd.DataFrame, rest_id: str, rest_name: str):
         fig_bar = px.bar(
             compare_df, x="Restaurant", y="Demand",
             color="Restaurant",
-            color_discrete_sequence=[P["primary"], P["secondary"], P["success"], P["accent"]],
+            color_discrete_sequence=[_primary, _secondary, _success, _accent],
             title="Units Sold (7d)",
         )
         fig_bar.update_layout(
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color=P["text"]), showlegend=False,
+            font=dict(color=_text), showlegend=False,
             xaxis=dict(gridcolor="#2a2a38"), yaxis=dict(gridcolor="#2a2a38"),
             margin=dict(l=0, r=0, t=30, b=0), height=260,
         )
@@ -214,12 +221,12 @@ def render_heatmap(df: pd.DataFrame, rest_id: str, rest_name: str):
         fig_rev = px.bar(
             compare_df, x="Restaurant", y="Revenue",
             color="Restaurant",
-            color_discrete_sequence=[P["primary"], P["secondary"], P["success"], P["accent"]],
+            color_discrete_sequence=[_primary, _secondary, _success, _accent],
             title="Revenue ₹K (7d)",
         )
         fig_rev.update_layout(
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color=P["text"]), showlegend=False,
+            font=dict(color=_text), showlegend=False,
             xaxis=dict(gridcolor="#2a2a38"), yaxis=dict(gridcolor="#2a2a38"),
             margin=dict(l=0, r=0, t=30, b=0), height=260,
         )
@@ -253,7 +260,7 @@ def render_heatmap(df: pd.DataFrame, rest_id: str, rest_name: str):
     ))
     fig_hm.update_layout(
         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color=P["text"]),
+        font=dict(color=_text),
         xaxis=dict(gridcolor="#2a2a38"),
         yaxis=dict(gridcolor="#2a2a38"),
         margin=dict(l=0, r=0, t=10, b=0), height=280,
