@@ -96,15 +96,24 @@ def check_alerts(df: pd.DataFrame, rest_id: str) -> list:
     return alerts
 
 
-def send_whatsapp_alert(phone: str, message: str, token: str) -> tuple:
-    """Send WhatsApp message via CallMeBot (free) or Twilio."""
+def send_whatsapp_alert(to_phone: str, message: str, sid: str, token: str, from_phone: str) -> tuple:
+    """Send WhatsApp message via Twilio."""
     try:
-        # CallMeBot free WhatsApp API
-        url = f"https://api.callmebot.com/whatsapp.php?phone={phone}&text={requests.utils.quote(message)}&apikey={token}"
-        r = requests.get(url, timeout=10)
-        if r.status_code == 200:
-            return True, "Sent via WhatsApp"
-        return False, f"WhatsApp API returned {r.status_code}"
+        import base64
+        credentials = base64.b64encode(f"{sid}:{token}".encode()).decode()
+        url  = f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json"
+        data = {
+            "From": from_phone if from_phone.startswith("whatsapp:") else f"whatsapp:{from_phone}",
+            "To":   to_phone   if to_phone.startswith("whatsapp:")   else f"whatsapp:{to_phone}",
+            "Body": message,
+        }
+        r = requests.post(url, data=data,
+                          headers={"Authorization": f"Basic {credentials}"},
+                          timeout=15)
+        resp = r.json()
+        if r.status_code in (200, 201):
+            return True, f"✅ WhatsApp sent! SID: {resp.get('sid','')}"
+        return False, f"Twilio error {r.status_code}: {resp.get('message', r.text[:200])}"
     except Exception as e:
         return False, str(e)
 
@@ -220,28 +229,77 @@ def render_alerts(df: pd.DataFrame, rest_id: str, rest_name: str):
                     st.error(f"❌ {msg}")
 
     with tab2:
-        st.markdown("<div class='section-header'>📱 WhatsApp via CallMeBot (Free)</div>", unsafe_allow_html=True)
-        st.info("""**Setup (2 min):**
-1. Save **+34 644 82 33 00** in your contacts as "CallMeBot"
-2. Send: `I allow callmebot to send me messages` on WhatsApp to that number
-3. You'll receive your API key by WhatsApp""")
+        st.markdown("<div class='section-header'>📱 WhatsApp Alerts via Twilio</div>", unsafe_allow_html=True)
+
+        # Load from secrets with fallback to manual input
+        try:
+            default_sid   = st.secrets.get("TWILIO_SID",   "")
+            default_token = st.secrets.get("TWILIO_TOKEN", "")
+            default_from  = st.secrets.get("TWILIO_FROM",  "whatsapp:+14155238886")
+            default_phone = st.secrets.get("ALERT_TO_PHONE", "")
+            secrets_loaded = bool(default_sid and default_token)
+        except Exception:
+            default_sid = default_token = default_from = default_phone = ""
+            secrets_loaded = False
+
+        if secrets_loaded:
+            st.success("✅ Twilio credentials loaded from Streamlit Secrets")
+        else:
+            st.info("Enter Twilio credentials below, or add them to Streamlit Secrets for auto-loading.")
 
         w1, w2 = st.columns(2)
-        phone    = w1.text_input("WhatsApp Number", placeholder="+91XXXXXXXXXX (with country code)")
-        wa_token = w2.text_input("CallMeBot API Key", placeholder="From WhatsApp reply")
+        twilio_sid   = w1.text_input("Twilio Account SID",
+                                      value=default_sid,
+                                      placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+        twilio_token = w2.text_input("Twilio Auth Token",
+                                      value=default_token,
+                                      type="password",
+                                      placeholder="Your Twilio Auth Token")
+        w3, w4 = st.columns(2)
+        twilio_from  = w3.text_input("From (Twilio Sandbox)",
+                                      value=default_from,
+                                      placeholder="whatsapp:+14155238886")
+        alert_phone  = w4.text_input("Your WhatsApp Number",
+                                      value=default_phone,
+                                      placeholder="+917696789737")
 
-        if st.button("📱 Send WhatsApp Alert", use_container_width=True, disabled=not selected_alerts):
-            if not phone or not wa_token:
-                st.error("Please enter phone number and API key.")
+        st.caption("⚠️ Make sure you have joined the Twilio Sandbox first — send the join keyword to +1 415 523 8886 on WhatsApp.")
+
+        # Test button
+        col_test, col_send = st.columns(2)
+        if col_test.button("🧪 Send Test Message", use_container_width=True):
+            if not twilio_sid or not twilio_token or not alert_phone:
+                st.error("Please fill all Twilio fields.")
             else:
-                msg = f"🍽️ IntelliPredict Alert — {rest_name}\n"
+                test_msg = f"✅ IntelliPredict Test Alert\n{rest_name}\n{datetime.now().strftime('%d %b %Y %H:%M')}\nTwilio is connected successfully!"
+                with st.spinner("Sending test WhatsApp message…"):
+                    ok, result = send_whatsapp_alert(alert_phone, test_msg, twilio_sid, twilio_token, twilio_from)
+                if ok:
+                    st.success(result)
+                else:
+                    st.error(f"❌ {result}")
+
+        if col_send.button("📱 Send Real Alerts", use_container_width=True, disabled=not selected_alerts):
+            if not twilio_sid or not twilio_token or not alert_phone:
+                st.error("Please fill all Twilio fields.")
+            else:
+                msg  = f"🍽️ IntelliPredict Alerts — {rest_name}\n"
                 msg += f"📅 {datetime.now().strftime('%d %b %Y %H:%M')}\n\n"
                 for a in selected_alerts:
-                    msg += f"{a['icon']} {a['title']}\n{a['body']}\n\n"
-                with st.spinner("Sending WhatsApp message…"):
-                    ok, result = send_whatsapp_alert(phone, msg, wa_token)
+                    msg += f"{a['icon']} {a['title']}: {a['body']}\n\n"
+                with st.spinner("Sending WhatsApp alerts via Twilio…"):
+                    ok, result = send_whatsapp_alert(alert_phone, msg, twilio_sid, twilio_token, twilio_from)
                 if ok:
-                    st.success(f"✅ {result}")
+                    st.success(result)
+                    st.session_state["alert_log"] = st.session_state.get("alert_log", [])
+                    for a in selected_alerts:
+                        st.session_state["alert_log"].insert(0, {
+                            "time": datetime.now().strftime("%d %b %H:%M"),
+                            "channel": "WhatsApp",
+                            "restaurant": rest_name,
+                            "type": a["type"],
+                            "title": a["title"],
+                        })
                 else:
                     st.error(f"❌ {result}")
 
