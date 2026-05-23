@@ -135,7 +135,7 @@ def main():
         "🗺️ Restaurant Heatmap": ("revenue",         lambda: render_heatmap(df, rest_id, rest_name)),
         "🔬 Model Lab":          ("model_lab",       lambda: render_model_lab(df, rest_id, rest_name)),
         "🤖 AI Insights":        ("ai_insights",     lambda: render_ai_insights(df, rest_id, rest_name)),
-        "🎯 Sentiment Analysis": ("ai_insights",     lambda: render_sentiment(rest_name)),
+        "🎯 Sentiment Analysis": ("ai_insights",     lambda: render_sentiment(df, rest_id, rest_name)),
         "📱 Smart Alerts":       ("ai_insights",     lambda: render_alerts(df, rest_id, rest_name)),
         "📊 PDF Report":         ("ai_insights",     lambda: render_pdf_report(df, rest_id, rest_name)),
         "👥 User Management":    ("user_management", lambda: render_user_management()),

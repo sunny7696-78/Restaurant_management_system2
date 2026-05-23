@@ -9,11 +9,12 @@ from utils import format_inr
 from data_generator import RESTAURANTS, CATEGORIES, PRICE_MAP
 
 P = PALETTE
+_P_muted = P["muted"]
 PC = {k: v for k, v in P.items()}
 
 def render_pdf_report(df: pd.DataFrame, rest_id: str, rest_name: str):
     st.markdown("# 📊 Executive PDF Report")
-    st.markdown(f"<small style='color:{P['muted']}'>One-click professional report with charts, KPIs & AI recommendations</small>", unsafe_allow_html=True)
+    st.markdown(f"<small style='color:{_P_muted}'>One-click professional report with charts, KPIs & AI recommendations</small>", unsafe_allow_html=True)
     st.divider()
 
     c1, c2, c3 = st.columns(3)

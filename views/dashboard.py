@@ -9,12 +9,16 @@ from config import PALETTE
 from utils import format_inr
 from realtime_engine import init_live_store, generate_live_tick, push_tick, get_live_store
 
-P = PALETTE   # shorthand
+P = PALETTE
+_P_accent = P["accent"]
+_P_muted = P["muted"]
+_P_primary = P["primary"]
+_P_success = P["success"]   # shorthand
 
 def render_dashboard(df: pd.DataFrame, rest_id: str, rest_name: str):
     st.markdown("# 🍽️ IntelliPredict Dashboard")
     st.markdown(
-        f"<small style='color:{P['muted']}'>Showing data for <b>{rest_name}</b> · "
+        f"<small style='color:{_P_muted}'>Showing data for <b>{rest_name}</b> · "
         "LSTM + XGBoost + Prophet Ensemble</small>",
         unsafe_allow_html=True,
     )
@@ -62,7 +66,7 @@ def render_dashboard(df: pd.DataFrame, rest_id: str, rest_name: str):
     # ── REAL-TIME LIVE ORDERS ─────────────────────────────────────────────────
     st.markdown("<div class='section-header'>⚡ Real-Time Live Orders</div>", unsafe_allow_html=True)
     st.markdown(
-        f"<small style='color:{P['muted']}'>Simulated live order stream with weather & hour-of-day factors</small>",
+        f"<small style='color:{_P_muted}'>Simulated live order stream with weather & hour-of-day factors</small>",
         unsafe_allow_html=True,
     )
 
@@ -105,10 +109,10 @@ def render_dashboard(df: pd.DataFrame, rest_id: str, rest_name: str):
     last_tick_qty = ticks[-1]["qty"] if ticks else 0
 
     for col, label, val, color in [
-        (lk1, "Live Orders Today",   f"{live_qty:,} units",          P["primary"]),
+        (lk1, "Live Orders Today",   f"{live_qty:,} units",          _P_primary),
         (lk2, "Live Revenue Today",  format_inr(live_rev),           P["secondary"]),
-        (lk3, "Orders Last Tick",    f"{last_tick_qty} units",        P["success"]),
-        (lk4, "Ticks Recorded",      f"{len(ticks)}",                 P["accent"]),
+        (lk3, "Orders Last Tick",    f"{last_tick_qty} units",        _P_success),
+        (lk4, "Ticks Recorded",      f"{len(ticks)}",                 _P_accent),
     ]:
         col.markdown(f"""
         <div class='kpi-card' style='border-color:{color}44'>
@@ -142,7 +146,7 @@ def render_dashboard(df: pd.DataFrame, rest_id: str, rest_name: str):
             )
             col_a, col_b = st.columns([1, 2])
             with col_a:
-                st.markdown(f"<small style='color:{P['muted']}'>Live category mix</small>", unsafe_allow_html=True)
+                st.markdown(f"<small style='color:{_P_muted}'>Live category mix</small>", unsafe_allow_html=True)
                 fig_pie = px.pie(
                     cat_df, names="category", values="qty",
                     color_discrete_sequence=[P["primary"], P["secondary"], P["success"], P["accent"]],
@@ -156,7 +160,7 @@ def render_dashboard(df: pd.DataFrame, rest_id: str, rest_name: str):
                 st.plotly_chart(fig_pie, use_container_width=True)
 
             with col_b:
-                st.markdown(f"<small style='color:{P['muted']}'>Recent live orders</small>", unsafe_allow_html=True)
+                st.markdown(f"<small style='color:{_P_muted}'>Recent live orders</small>", unsafe_allow_html=True)
                 recent_orders = store.get("orders_today", [])[-10:][::-1]
                 for o in recent_orders:
                     cat_color = {

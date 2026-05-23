@@ -16,6 +16,8 @@ from weather_api import get_weather
 from data_generator import CATEGORIES, PRICE_MAP
 
 P = PALETTE
+_P_muted = P["muted"]
+_P_primary = P["primary"]
 
 
 def _color(direction: str) -> str:
@@ -29,7 +31,7 @@ def _color(direction: str) -> str:
 def render_factor_prediction(df: pd.DataFrame, rest_id: str, rest_name: str):
     st.markdown("# 🧩 Factor-Based Prediction")
     st.markdown(
-        f"<small style='color:{P['muted']}'>Every demand driver explained & quantified for <b>{rest_name}</b></small>",
+        f"<small style='color:{_P_muted}'>Every demand driver explained & quantified for <b>{rest_name}</b></small>",
         unsafe_allow_html=True,
     )
     st.divider()
@@ -45,7 +47,7 @@ def render_factor_prediction(df: pd.DataFrame, rest_id: str, rest_name: str):
     base_price = PRICE_MAP[category]
     adj_price  = int(base_price * price_multiplier)
     col4.markdown(
-        f"<small style='color:{P['muted']}'>₹{base_price} → <b style='color:{P['primary']}'>₹{adj_price}</b></small>",
+        f"<small style='color:{_P_muted}'>₹{base_price} → <b style='color:{_P_primary}'>₹{adj_price}</b></small>",
         unsafe_allow_html=True,
     )
 
@@ -110,9 +112,9 @@ def render_factor_prediction(df: pd.DataFrame, rest_id: str, rest_name: str):
 
     h1, h2, h3, h4 = st.columns(4)
     for col, label, val, color in [
-        (h1, "Baseline Demand",    f"{baseline:.0f} units", P["muted"]),
+        (h1, "Baseline Demand",    f"{baseline:.0f} units", _P_muted),
         (h2, "Factor Adjustment",  f"{'+'if total_adj_pct>=0 else ''}{total_adj_pct}%", adj_color),
-        (h3, "Predicted Demand",   f"{int(predicted)} units", P["primary"]),
+        (h3, "Predicted Demand",   f"{int(predicted)} units", _P_primary),
         (h4, "Predicted Revenue",  format_inr(int(predicted) * adj_price), P["secondary"]),
     ]:
         col.markdown(f"""
@@ -126,7 +128,7 @@ def render_factor_prediction(df: pd.DataFrame, rest_id: str, rest_name: str):
     # ── Factor breakdown ──────────────────────────────────────────────────────
     st.markdown("<div class='section-header'>🔍 Factor-by-Factor Breakdown</div>", unsafe_allow_html=True)
     st.markdown(
-        f"<small style='color:{P['muted']}'>Each factor's contribution to today's predicted demand</small>",
+        f"<small style='color:{_P_muted}'>Each factor's contribution to today's predicted demand</small>",
         unsafe_allow_html=True,
     )
 
@@ -189,7 +191,7 @@ def render_factor_prediction(df: pd.DataFrame, rest_id: str, rest_name: str):
     # ── Multi-day factor forecast ─────────────────────────────────────────────
     st.markdown("<div class='section-header'>📅 Multi-Day Factor Forecast</div>", unsafe_allow_html=True)
     st.markdown(
-        f"<small style='color:{P['muted']}'>Factor-adjusted predictions for next {horizon} days</small>",
+        f"<small style='color:{_P_muted}'>Factor-adjusted predictions for next {horizon} days</small>",
         unsafe_allow_html=True,
     )
 

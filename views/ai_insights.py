@@ -9,6 +9,14 @@ import plotly.graph_objects as go
 from config import PALETTE
 from data_generator import CATEGORIES, PRICE_MAP
 from utils import format_inr
+P = PALETTE
+_P_danger = P["danger"]
+_P_primary = P["primary"]
+_P_secondary = P["secondary"]
+_P_success = P["success"]
+_P_muted = P["muted"]
+_P_text = P["text"]
+_P_accent = P.get("accent", "#FFBF69")
 
 
 GEMINI_MODEL = "gemini-2.0-flash"
@@ -120,8 +128,8 @@ def render_ai_insights(df: pd.DataFrame, rest_id: str, rest_name: str):
     # ── Quick KPIs ────────────────────────────────────────────────────────────
     c1, c2, c3, c4 = st.columns(4)
     for col, label, val, color in [
-        (c1, "Avg Daily Demand",  f"{avg_qty:.0f} units", PALETTE["primary"]),
-        (c2, "Avg Daily Waste",   f"{avg_waste:.1f} kg",  PALETTE["danger"]),
+        (c1, "Avg Daily Demand",  f"{avg_qty:.0f} units", _P_primary),
+        (c2, "Avg Daily Waste",   f"{avg_waste:.1f} kg",  _P_danger),
         (c3, "Avg Daily Revenue", format_inr(avg_rev),    PALETTE["secondary"]),
         (c4, "Peak Demand Day",   str(peak_day)[:10],     PALETTE["accent"]),
     ]:
@@ -184,8 +192,8 @@ Return ONLY this exact JSON structure with no extra text:
 
             p1, p2, p3, p4 = st.columns(4)
             for col, label, val, color in [
-                (p1, "Predicted Demand (7d)",    f"{result.get('demand_next_7d', '–'):,}" if isinstance(result.get('demand_next_7d'), int) else "–", PALETTE["primary"]),
-                (p2, "Predicted Demand (30d)",   f"{result.get('demand_next_30d', '–'):,}" if isinstance(result.get('demand_next_30d'), int) else "–", PALETTE["secondary"]),
+                (p1, "Predicted Demand (7d)",    f"{result.get('demand_next_7d', '–'):,}" if isinstance(result.get('demand_next_7d'), int) else "–", _P_primary),
+                (p2, "Predicted Demand (30d)",   f"{result.get('demand_next_30d', '–'):,}" if isinstance(result.get('demand_next_30d'), int) else "–", _P_secondary),
                 (p3, "Waste Reduction Potential", result.get("waste_reduction_potential", "–"), PALETTE["success"]),
                 (p4, "Revenue Growth Opp.",       result.get("revenue_growth_opportunity", "–"), PALETTE["accent"]),
             ]:

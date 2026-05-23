@@ -98,7 +98,7 @@ def _star_html(score: float, color: str) -> str:
     return f"<span style='color:{color};font-size:18px'>{stars}</span> <b style='color:{color}'>{score:.1f}/5</b>"
 
 
-def render_sentiment(rest_name: str):
+def render_sentiment(df, rest_id: str, rest_name: str):
     st.markdown("# 🎯 Customer Sentiment Analysis")
     st.markdown(f"<small style='color:{_muted}'>Paste Google/Zomato/Swiggy reviews → Gemini analyses sentiment by category for <b>{rest_name}</b></small>", unsafe_allow_html=True)
     st.divider()
