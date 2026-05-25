@@ -1,7 +1,7 @@
 """Customer Sentiment Analysis view for IntelliPredict."""
 
 import streamlit as st
-from gemini_client import call_gemini, gemini_quota_warning
+from gemini_client import call_gemini, call_gemini_json, gemini_quota_warning, show_gemini_error
 import pandas as pd
 import json
 import requests
@@ -130,10 +130,7 @@ def render_sentiment(df, rest_id: str, rest_name: str):
         result, err = call_gemini_sentiment(reviews, rest_name, api_key)
 
     if err:
-        if "quota" in err.lower() or "429" in err:
-            gemini_quota_warning()
-        else:
-            st.error(f"❌ Analysis failed: {err}")
+        show_gemini_error(err)
         return
 
     if not result:
