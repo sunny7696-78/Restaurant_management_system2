@@ -270,10 +270,16 @@ def render_live_platform_data(df: pd.DataFrame, rest_id: str, rest_name: str):
     for d in [5, 6]:    mat[d] *= 1.4
     for h in [3, 4, 10, 11]: mat[:, h] *= 1.7  # lunch & dinner
 
-    color = PLATFORM_BASE[sel_plat]["color"]
+    # Use named Plotly colorscales — compatible with all Plotly versions
+    plat_colorscales = {
+        "Zomato": "Reds",
+        "Swiggy": "Oranges",
+        "Google Food": "Blues",
+    }
+    cs = plat_colorscales.get(sel_plat, "YlOrRd")
     fig_hm = go.Figure(go.Heatmap(
         z=mat, x=[f"{h}:00" for h in hours], y=days,
-        colorscale=[[0, "#1A1A24"], [0.5, color + "88"], [1.0, color]],
+        colorscale=cs,
         hovertemplate="<b>%{y} %{x}</b><br>Orders: %{z:.0f}<extra></extra>",
     ))
     fig_hm.update_layout(

@@ -241,7 +241,7 @@ def render_heatmap(df: pd.DataFrame, rest_id: str, rest_name: str):
         z=matrix,
         x=[f"{h}:00" for h in hours],
         y=days,
-        colorscale=[[0, "#1A1A24"], [0.4, "#FF9F1C"], [0.75, "#FF6B35"], [1.0, "#E63946"]],
+        colorscale="YlOrRd",
         hovertemplate="<b>%{y} %{x}</b><br>Demand: %{z:.0f} units<extra></extra>",
         showscale=True,
     ))
