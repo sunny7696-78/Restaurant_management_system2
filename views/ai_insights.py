@@ -6,6 +6,7 @@ import numpy as np
 import requests
 import json
 import plotly.graph_objects as go
+from gemini_client import call_gemini, call_gemini_json, gemini_quota_warning
 from config import PALETTE
 from data_generator import CATEGORIES, PRICE_MAP
 from utils import format_inr
@@ -185,7 +186,7 @@ Return ONLY this exact JSON structure with no extra text:
             result, err = call_gemini_json(prompt)
 
         if err:
-            st.error(f"❌ {err}")
+            gemini_quota_warning() if "quota" in err.lower() or "429" in err else st.error(f"❌ {err}")
         elif result:
             st.success("✅ AI Prediction complete!")
             st.divider()
@@ -263,7 +264,7 @@ Return ONLY this exact JSON structure with no extra text:
                 st.markdown("<div class='section-header'>📋 Executive Summary</div>", unsafe_allow_html=True)
                 st.info(result["summary"])
         else:
-            st.warning("⚠️ Gemini returned an empty response. Please try again.")
+            st.warning("⚠️ Gemini returned an empty response. Please wait 60 seconds and try again.")
 
     st.divider()
 

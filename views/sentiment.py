@@ -1,6 +1,7 @@
 """Customer Sentiment Analysis view for IntelliPredict."""
 
 import streamlit as st
+from gemini_client import call_gemini, gemini_quota_warning
 import pandas as pd
 import json
 import requests
@@ -67,27 +68,8 @@ Return this exact JSON (no markdown, no extra text):
   "summary": "<2 sentence executive summary>"
 }}"""
 
-    try:
-        resp = requests.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}",
-            headers={"Content-Type": "application/json"},
-            json={
-                "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {"temperature": 0.1, "responseMimeType": "application/json"},
-            },
-            timeout=30,
-        )
-        data = resp.json()
-        if resp.status_code != 200:
-            return {}, f"API error {resp.status_code}: {data.get('error',{}).get('message','')}"
-        raw   = data["candidates"][0]["content"]["parts"][0]["text"]
-        clean = re.sub(r"```(?:json)?", "", raw).strip().strip("`")
-        match = re.search(r"\{.*\}", clean, re.DOTALL)
-        if match:
-            clean = match.group(0)
-        return json.loads(clean), None
-    except Exception as e:
-        return {}, str(e)
+    from gemini_client import call_gemini_json
+    return call_gemini_json(prompt)
 
 
 def _star_html(score: float, color: str) -> str:
@@ -148,7 +130,10 @@ def render_sentiment(df, rest_id: str, rest_name: str):
         result, err = call_gemini_sentiment(reviews, rest_name, api_key)
 
     if err:
-        st.error(f"❌ Analysis failed: {err}")
+        if "quota" in err.lower() or "429" in err:
+            gemini_quota_warning()
+        else:
+            st.error(f"❌ Analysis failed: {err}")
         return
 
     if not result:

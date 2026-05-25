@@ -281,7 +281,8 @@ def _get_ai_summary(kpis: dict, rest_name: str, api_key: str) -> str:
             f"to sustain growth momentum."
         )
     try:
-        import requests as req
+        import streamlit as st
+        from gemini_client import call_gemini
         sign = "+" if kpis["d_rev"] >= 0 else ""
         prompt = (
             f"You are a restaurant business analyst. Write a 3-sentence executive summary "
@@ -292,15 +293,10 @@ def _get_ai_summary(kpis: dict, rest_name: str, api_key: str) -> str:
             f"Stock coverage: {kpis['cov']}x. "
             f"Be concise, professional, and data-driven. No bullet points."
         )
-        resp = req.post(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
-            f"?key={api_key}",
-            headers={"Content-Type": "application/json"},
-            json={"contents": [{"parts": [{"text": prompt}]}]},
-            timeout=20,
-        )
-        data = resp.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        result = call_gemini(prompt)
+        if result.startswith("⚠️") or "quota" in result.lower():
+            raise Exception(result)
+        return result.strip()
     except Exception:
         return (
             f"This week {rest_name} demonstrated strong operational performance with "
