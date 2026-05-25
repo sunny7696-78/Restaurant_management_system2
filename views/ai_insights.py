@@ -3,8 +3,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import requests
-import json
 import plotly.graph_objects as go
 from gemini_client import call_gemini, call_gemini_json, gemini_quota_warning, show_gemini_error
 from config import PALETTE
@@ -18,86 +16,6 @@ _P_success = P["success"]
 _P_muted = P["muted"]
 _P_text = P["text"]
 _P_accent = P.get("accent", "#FFBF69")
-
-
-GEMINI_MODEL = "gemini-2.0-flash"
-GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
-
-
-def get_api_key() -> str:
-    """Retrieve Gemini API key from Streamlit secrets."""
-    try:
-        return st.secrets["GEMINI_API_KEY"]
-    except Exception:
-        return ""
-
-
-def call_gemini(prompt: str) -> str:
-    """Call Gemini API and return text response."""
-    api_key = get_api_key()
-    if not api_key or api_key == "your-gemini-api-key-here":
-        return "⚠️ Gemini API key not configured. Please add GEMINI_API_KEY in Streamlit Cloud → App Settings → Secrets."
-    try:
-        resp = requests.post(
-            f"{GEMINI_API_URL}?key={api_key}",
-            headers={"Content-Type": "application/json"},
-            json={"contents": [{"parts": [{"text": prompt}]}]},
-            timeout=30,
-        )
-        data = resp.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"]
-    except Exception as e:
-        return f"AI temporarily unavailable: {str(e)}"
-
-
-def call_gemini_json(prompt: str) -> tuple:
-    """Call Gemini API and parse JSON response.
-    Returns (result_dict, error_message). On success error_message is None.
-    """
-    api_key = get_api_key()
-    if not api_key or api_key == "your-gemini-api-key-here":
-        return {}, "GEMINI_API_KEY not set in Streamlit Secrets."
-    try:
-        resp = requests.post(
-            f"{GEMINI_API_URL}?key={api_key}",
-            headers={"Content-Type": "application/json"},
-            json={
-                "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {
-                    "temperature": 0.2,
-                    "responseMimeType": "application/json",
-                },
-            },
-            timeout=45,
-        )
-        if resp.status_code != 200:
-            return {}, f"Gemini API error {resp.status_code}: {resp.text[:300]}"
-
-        data = resp.json()
-
-        # Check for blocked response
-        if not data.get("candidates"):
-            reason = data.get("promptFeedback", {}).get("blockReason", "Unknown")
-            return {}, f"Response blocked by Gemini safety filter: {reason}"
-
-        raw = data["candidates"][0]["content"]["parts"][0]["text"]
-
-        # Strip markdown fences robustly
-        import re
-        clean = re.sub(r"```(?:json)?", "", raw).strip().strip("`").strip()
-
-        # Find the JSON object if there's extra text
-        match = re.search(r"\{.*\}", clean, re.DOTALL)
-        if match:
-            clean = match.group(0)
-
-        parsed = json.loads(clean)
-        return parsed, None
-
-    except json.JSONDecodeError as e:
-        return {}, f"JSON parse error: {e}. Raw response: {raw[:400] if 'raw' in dir() else 'no response'}"
-    except Exception as e:
-        return {}, f"Unexpected error: {str(e)}"
 
 
 def render_ai_insights(df: pd.DataFrame, rest_id: str, rest_name: str):
