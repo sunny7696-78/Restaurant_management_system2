@@ -78,6 +78,7 @@ def render_sidebar():
             ("📱 Smart Alerts",           "ai_insights"),
             ("📊 PDF Report",             "ai_insights"),
             ("👥 User Management",        "user_management"),
+            ("🌐 Real Data Hub",         "dashboard"),
         ]
 
         visible = [label for label, key in all_pages if has_permission(key)]
@@ -149,6 +150,7 @@ def main():
         "📱 Smart Alerts":       ("ai_insights",     lambda: render_alerts(df, rest_id, rest_name)),
         "📊 PDF Report":         ("ai_insights",     lambda: render_pdf_report(df, rest_id, rest_name)),
         "👥 User Management":    ("user_management", lambda: render_user_management()),
+        "🌐 Real Data Hub":      ("dashboard",       lambda: render_real_data(df, rest_id, rest_name)),
     }
 
     if page in page_map:
