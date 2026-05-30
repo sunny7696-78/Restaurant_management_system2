@@ -26,6 +26,7 @@ from views.alerts             import render_alerts
 from views.heatmap            import render_heatmap
 from views.sentiment          import render_sentiment
 from views.live_platform_data import render_live_platform_data
+from views.real_data        import render_real_data
 
 st.set_page_config(
     page_title=PAGE_TITLE, page_icon=PAGE_ICON,
@@ -41,9 +42,18 @@ user = get_current_user()
 role = user.get("role", "staff")
 
 @st.cache_data(show_spinner=False)
-def load_data():
-    logger.info("Loading dataset...")
+def load_synthetic():
+    logger.info("Loading synthetic dataset...")
     return generate_dataset()
+
+def load_data():
+    """Return real uploaded data if available, else synthetic."""
+    if st.session_state.get("real_df") is not None:
+        from data_generator import generate_dataset as _gen
+        synth = load_synthetic()
+        from real_data_engine import merge_real_with_synthetic
+        return merge_real_with_synthetic(st.session_state["real_df"], synth)
+    return load_synthetic()
 
 def render_sidebar():
     with st.sidebar:
