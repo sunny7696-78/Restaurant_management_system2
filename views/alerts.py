@@ -308,10 +308,10 @@ def render_alerts(df: pd.DataFrame, rest_id: str, rest_name: str):
         st.markdown(f"<small style='color:{_muted}'>Customize when alerts fire</small>", unsafe_allow_html=True)
 
         t1, t2 = st.columns(2)
-        t1.slider("Stock Critical Below (coverage)",  0.8, 2.0, 1.1, 0.1, key="thresh_stock")
-        t1.slider("Waste Spike Threshold (%)",         10,  50,  20,  5,   key="thresh_waste")
-        t2.slider("Demand Spike Threshold (%)",        10,  50,  25,  5,   key="thresh_demand")
-        t2.slider("Revenue Drop Threshold (%)",        5,   30,  15,  5,   key="thresh_revenue")
+        t1.slider("Stock Critical Below (coverage)", min_value=0.8, max_value=2.0, value=1.1, step=0.1, key="thresh_stock")
+        t1.slider("Waste Spike Threshold (%)",  min_value=10, max_value=50,  value=20, step=5,  key="thresh_waste")
+        t2.slider("Demand Spike Threshold (%)", min_value=10, max_value=50,  value=25, step=5,  key="thresh_demand")
+        t2.slider("Revenue Drop Threshold (%)", min_value=5,  max_value=30,  value=15, step=5,  key="thresh_revenue")
 
         if st.button("💾 Save Thresholds", use_container_width=True):
             st.success("✅ Thresholds saved for this session.")

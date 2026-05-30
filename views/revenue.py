@@ -27,8 +27,9 @@ def render_revenue(df: pd.DataFrame, rest_id: str, rest_name: str):
     with col1:
         horizon = st.selectbox("Forecast Horizon (days)", [7, 14, 30], index=1)
     with col2:
-        price_multiplier = st.slider("Price Adjustment", 0.5, 2.0, 1.0, 0.05,
-                                     format="%.2fx  (₹%.0f per unit)")
+        price_multiplier = st.slider("Price Adjustment",
+                                     min_value=0.50, max_value=2.00,
+                                     value=1.00, step=0.05)
 
     run_rev = st.button("💡 Simulate Revenue", use_container_width=True)
 

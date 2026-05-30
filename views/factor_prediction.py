@@ -40,8 +40,7 @@ def render_factor_prediction(df: pd.DataFrame, rest_id: str, rest_name: str):
     col1, col2, col3, col4 = st.columns(4)
     category         = col1.selectbox("Menu Category", CATEGORIES)
     horizon          = col2.selectbox("Forecast Horizon", [7, 14, 30], index=0)
-    price_multiplier = col3.slider("Price Adjustment", 0.5, 2.0, 1.0, 0.05,
-                                   format="%.2fx")
+    price_multiplier = col3.slider("Price Adjustment", min_value=0.50, max_value=2.00, value=1.00, step=0.05)
     run = col4.button("🧩 Analyse Factors", use_container_width=True)
 
     base_price = PRICE_MAP[category]
