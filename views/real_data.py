@@ -230,23 +230,12 @@ def render_real_data(df: pd.DataFrame, rest_id: str, rest_name: str):
             use_container_width=True,
         )
 
-        # Excel template
-        excel_buf = io.BytesIO()
-        with pd.ExcelWriter(excel_buf, engine="openpyxl") as writer:
-            template_df.to_excel(writer, index=False, sheet_name="Sales Data")
-            pd.DataFrame({
-                "Column": ["date","restaurant_id","restaurant_name","category",
-                            "quantity_sold","revenue","waste_kg","stock_level"],
-                "Required": ["Yes","No","No","No","Yes","Yes","No","No"],
-                "Format": ["YYYY-MM-DD","Text","Text",
-                            "Main Course / Starters / Beverages / Desserts",
-                            "Integer","Decimal","Decimal","Integer"],
-            }).to_excel(writer, index=False, sheet_name="Instructions")
-        excel_buf.seek(0)
+        # JSON template as second option
+        import json as _json
+        json_bytes = template_df.to_json(orient="records", date_format="iso").encode()
         c2.download_button(
-            "⬇️ Download Excel Template", excel_buf.getvalue(),
-            "intellipredict_template.xlsx",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "⬇️ Download JSON Template", json_bytes,
+            "intellipredict_template.json", "application/json",
             use_container_width=True,
         )
 
