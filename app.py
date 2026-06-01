@@ -27,6 +27,7 @@ from views.heatmap            import render_heatmap
 from views.sentiment          import render_sentiment
 from views.live_platform_data import render_live_platform_data
 from views.real_data        import render_real_data
+from views.about            import render_about
 
 st.set_page_config(
     page_title=PAGE_TITLE, page_icon=PAGE_ICON,
