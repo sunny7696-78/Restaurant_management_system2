@@ -127,6 +127,7 @@ def render_ai_insights(df: pd.DataFrame, rest_id: str, rest_name: str):
     last7_rev = daily["revenue"].tail(7).sum()
     prev7_rev = daily["revenue"].iloc[-14:-7].sum()
     peak_day  = daily.loc[daily["qty"].idxmax(), "date"]
+    avg_cov   = (daily["stock"].mean() / daily["qty"].mean()) if daily["qty"].mean() > 0 else 0
 
     # ── Quick KPIs ────────────────────────────────────────────────────────────
     c1, c2, c3, c4 = st.columns(4)
@@ -188,7 +189,7 @@ Return ONLY this exact JSON structure with no extra text:
             result, err = call_gemini_json(prompt)
 
         if err:
-            if any(x in err.lower() for x in ["quota", "unavailable", "exhausted"]):
+            if any(x in err.lower() for x in ["quota", "unavailable", "exhausted", "network_error", "timeout", "no_key"]):
                 st.warning("⏳ Gemini quota reached — showing rule-based prediction instead.")
                 # Rule-based prediction fallback
                 result = {
@@ -376,7 +377,6 @@ Respond in 3-4 sentences max with actionable, data-driven insights. Use Rs for c
     d_demand = int(recent7["qty"].sum() - prev7["qty"].sum())
     d_waste  = round(recent7["waste"].sum() - prev7["waste"].sum(), 1)
     d_rev    = recent7["revenue"].sum() - prev7["revenue"].sum()
-    avg_cov  = (daily["stock"].mean() / daily["qty"].mean()) if daily["qty"].mean() > 0 else 0
 
     insights = [
         {
