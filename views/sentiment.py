@@ -33,14 +33,15 @@ The food quality has gone down compared to last year. Starters used to be amazin
 Amazing ambiance and excellent food! The chef's special main course was phenomenal. Desserts section needs improvement though - limited options and a bit pricey. Beverages are top notch!"""
 
 
-def call_gemini_sentiment(reviews_text: str, rest_name: str, api_key: str) -> dict:
-    """Analyse sentiment with Gemini and return structured results."""
-    prompt = f"""You are a restaurant analytics expert. Analyze these customer reviews for {rest_name} and return ONLY valid JSON.
+def call_gemini_sentiment(reviews_text: str, rest_name: str, api_key: str = "") -> tuple:
+    """Analyse sentiment with Gemini. Returns (dict, error_str)."""
+    from gemini_client import call_gemini_json
+    prompt = f"""You are a restaurant analytics expert. Analyze these customer reviews for {rest_name} and return ONLY valid JSON (no markdown, no extra text):
 
 Reviews:
 {reviews_text}
 
-Return this exact JSON (no markdown, no extra text):
+Return exactly this JSON structure:
 {{
   "overall_score": <float 1-5>,
   "total_reviews": <int>,
@@ -67,8 +68,6 @@ Return this exact JSON (no markdown, no extra text):
   "urgent_actions": ["<action1>", "<action2>", "<action3>"],
   "summary": "<2 sentence executive summary>"
 }}"""
-
-    from gemini_client import call_gemini_json
     return call_gemini_json(prompt)
 
 
@@ -112,22 +111,12 @@ def render_sentiment(df, rest_id: str, rest_name: str):
     if not run:
         return
 
-    api_key = ""
-    try:
-        api_key = st.secrets.get("GEMINI_API_KEY", "")
-    except Exception:
-        pass
-
-    if not api_key:
-        st.error("❌ GEMINI_API_KEY not set in Streamlit Secrets.")
-        return
-
     if not reviews.strip():
         st.error("Please paste some reviews first.")
         return
 
     with st.spinner("🧠 Gemini is reading and analysing customer reviews…"):
-        result, err = call_gemini_sentiment(reviews, rest_name, api_key)
+        result, err = call_gemini_sentiment(reviews, rest_name)
 
     if err:
         show_gemini_error(err)
