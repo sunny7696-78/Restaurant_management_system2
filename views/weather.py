@@ -53,7 +53,7 @@ def render_weather(df: pd.DataFrame, rest_id: str, rest_name: str):
         st.markdown("<div class='section-header'>Temperature vs Demand</div>", unsafe_allow_html=True)
         fig_t = px.scatter(ts, x="temperature", y="quantity_sold", color="is_weekend",
                            color_discrete_map={0: PALETTE["primary"], 1: PALETTE["secondary"]},
-                           trendline="ols", labels={"is_weekend": "Weekend"})
+                           trendline="lowess", labels={"is_weekend": "Weekend"})
         fig_t.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                             font=dict(color=PALETTE["text"]),
                             xaxis=dict(gridcolor="#2a2a38"),
@@ -65,7 +65,7 @@ def render_weather(df: pd.DataFrame, rest_id: str, rest_name: str):
     with c2:
         st.markdown("<div class='section-header'>Rainfall vs Demand</div>", unsafe_allow_html=True)
         fig_r = px.scatter(ts, x="rainfall_mm", y="quantity_sold",
-                           color_discrete_sequence=[PALETTE["success"]], trendline="ols")
+                           color_discrete_sequence=[PALETTE["success"]], trendline="lowess")
         fig_r.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
                             font=dict(color=PALETTE["text"]),
                             xaxis=dict(gridcolor="#2a2a38"),
