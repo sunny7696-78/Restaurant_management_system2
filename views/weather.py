@@ -47,6 +47,8 @@ def render_weather(df: pd.DataFrame, rest_id: str, rest_name: str):
     rest_df  = df[df["restaurant_id"] == rest_id].copy()
     category = st.selectbox("Category", CATEGORIES)
     ts = get_time_series(df, rest_id, category)
+    ts = ts.copy()
+    ts['day_of_week'] = ts['date'].dt.dayofweek
 
     c1, c2 = st.columns(2)
     with c1:
